@@ -10,11 +10,13 @@ use {
 };
 
 #[derive(Debug)]
-struct Relevant;
+struct Relevant {
+    label: Option<String>,
+}
 
 impl Drop for Relevant {
     fn drop(&mut self) {
-        report_error_on_drop!("Memory block wasn't deallocated");
+        report_error_on_drop!("Memory block {} wasn't deallocated", self.label.as_deref().unwrap_or(""));
     }
 }
 
@@ -39,6 +41,7 @@ impl<M> MemoryBlock<M> {
         size: u64,
         atom_mask: u64,
         flavor: MemoryBlockFlavor<M>,
+        label: Option<String>,
     ) -> Self {
         isize::try_from(atom_mask).expect("`atom_mask` is too large");
         MemoryBlock {
@@ -49,7 +52,9 @@ impl<M> MemoryBlock<M> {
             atom_mask,
             flavor,
             mapped: false,
-            relevant: Relevant,
+            relevant: Relevant {
+                label,
+            },
         }
     }
 

@@ -126,11 +126,12 @@ where
         &mut self,
         device: &impl AsRef<MD>,
         request: Request,
+        label: Option<String>,
     ) -> Result<MemoryBlock<M>, AllocationError>
     where
         MD: MemoryDevice<M>,
     {
-        self.alloc_internal(device.as_ref(), request, None)
+        self.alloc_internal(device.as_ref(), request, None, label)
     }
 
     /// Allocates memory block from specified `device` according to the `request`.
@@ -149,11 +150,12 @@ where
         device: &impl AsRef<MD>,
         request: Request,
         dedicated: Dedicated,
+        label: Option<String>,
     ) -> Result<MemoryBlock<M>, AllocationError>
     where
         MD: MemoryDevice<M>,
     {
-        self.alloc_internal(device.as_ref(), request, Some(dedicated))
+        self.alloc_internal(device.as_ref(), request, Some(dedicated), label)
     }
 
     unsafe fn alloc_internal(
@@ -161,6 +163,7 @@ where
         device: &impl MemoryDevice<M>,
         mut request: Request,
         dedicated: Option<Dedicated>,
+        label: Option<String>,
     ) -> Result<MemoryBlock<M>, AllocationError> {
         enum Strategy {
             Buddy,
@@ -273,6 +276,7 @@ where
                                 request.size,
                                 atom_mask,
                                 MemoryBlockFlavor::Dedicated { memory },
+                                label,
                             ));
                         }
                         Err(OutOfMemory::OutOfDeviceMemory) => continue,
@@ -339,6 +343,7 @@ where
                                     ptr: block.ptr,
                                     memory: block.memory,
                                 },
+                                label,
                             ))
                         }
                         Err(AllocationError::OutOfDeviceMemory) => continue,
@@ -396,6 +401,7 @@ where
                                     index: block.index,
                                     memory: block.memory,
                                 },
+                                label
                             ))
                         }
                         Err(AllocationError::OutOfDeviceMemory) => continue,
@@ -439,6 +445,7 @@ where
         props: MemoryPropertyFlags,
         offset: u64,
         size: u64,
+        label: Option<String>,
     ) -> MemoryBlock<M> {
         // Get the heap which the imported memory is from.
         let heap = self
@@ -477,6 +484,7 @@ where
             size,
             atom_mask,
             MemoryBlockFlavor::Dedicated { memory },
+            label,
         )
     }
 
